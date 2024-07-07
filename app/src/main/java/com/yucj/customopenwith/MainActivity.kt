@@ -41,10 +41,12 @@ class MainActivity : AppCompatActivity() {
         val browserIntents = mutableListOf<Intent>()
 
         for (activity in activities) {
-            val browserIntent = Intent(intent)
-            browserIntent.setPackage(activity.activityInfo.packageName)
-            browserOptions.add(activity.loadLabel(packageManager))
-            browserIntents.add(browserIntent)
+            if (activity.activityInfo.packageName != packageName) {
+                val browserIntent = Intent(intent)
+                browserIntent.setPackage(activity.activityInfo.packageName)
+                browserOptions.add(activity.loadLabel(packageManager))
+                browserIntents.add(browserIntent)
+            }
         }
 
         AlertDialog.Builder(this)
