@@ -36,11 +36,13 @@ class MainActivity : AppCompatActivity() {
             Intent.ACTION_VIEW -> {
                 val url = intent.dataString ?: return
                 showBrowserChooser(url)
+                LogUtils.logUrl(this, url)
             }
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
                 if (sharedText.startsWith("http://") || sharedText.startsWith("https://")) {
                     showBrowserChooser(sharedText)
+                    LogUtils.logUrl(this, sharedText)
                 } else {
                     // Handle cases where shared text is not a URL (optional)
                 }
@@ -50,7 +52,6 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("QueryPermissionsNeeded")
     private fun showBrowserChooser(url: String) {
-        LogUtils.logUrl(this, url)
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         val activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL)
 

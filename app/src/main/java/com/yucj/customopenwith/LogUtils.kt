@@ -14,11 +14,23 @@ object LogUtils {
     fun logUrl(context: Context, url: String) {
         val logFile = File(context.cacheDir, LOG_FILE_NAME)
         val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
-        val logEntry = "$timestamp - $url\n"
+        val newLogEntry = "$timestamp - $url"
 
         try {
-            FileWriter(logFile, true).use { writer ->
-                writer.append(logEntry)
+            // Read existing logs
+            val existingLogs = if (logFile.exists()) logFile.readLines() else emptyList()
+
+            // Remove previous entries with the same URL
+            val updatedLogs = existingLogs.filterNot { it.substringAfter(" - ") == url }
+
+            // Add the new log entry
+            val finalLogs = newLogEntry + updatedLogs
+
+            // Write back to the file
+            FileWriter(logFile, false).use { writer ->
+                finalLogs.forEach { entry ->
+                    writer.append(entry).append("\n")
+                }
             }
         } catch (e: IOException) {
             e.printStackTrace()
