@@ -6,14 +6,27 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // ... (Set up your layout if needed)
-
+        setContentView(R.layout.activity_main)
         handleIncomingUrlIntent()
+        displayLogs()
+    }
+
+    private fun displayLogs() {
+        val recyclerView: RecyclerView = findViewById(R.id.recycler_view_logs)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        val logs = LogUtils.getUrlLogs(this)
+        val logEntries = logs.map { log ->
+            val parts = log.split(" - ")
+            LogEntry(parts[1], parts[0])
+        }
+        recyclerView.adapter = LogAdapter(logEntries)
     }
 
     private fun handleIncomingUrlIntent() {
@@ -35,6 +48,7 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("QueryPermissionsNeeded")
     private fun showBrowserChooser(url: String) {
+        LogUtils.logUrl(this, url)
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         val activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL)
 
