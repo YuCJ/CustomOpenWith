@@ -24,7 +24,7 @@ object LogUtils {
             val updatedLogs = existingLogs.filterNot { it.substringAfter(" - ") == url }
 
             // Add the new log entry
-            val finalLogs = newLogEntry + updatedLogs
+            val finalLogs = listOf(newLogEntry) + updatedLogs
 
             // Write back to the file
             FileWriter(logFile, false).use { writer ->
