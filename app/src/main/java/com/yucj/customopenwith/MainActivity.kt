@@ -17,10 +17,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIncomingUrlIntent() {
-        when (intent.action) {Intent.ACTION_VIEW -> {
-            val url = intent.dataString ?: return
-            showBrowserChooser(url)
-        }
+        when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                val url = intent.dataString ?: return
+                showBrowserChooser(url)
+            }
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
                 if (sharedText.startsWith("http://") || sharedText.startsWith("https://")) {
