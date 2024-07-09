@@ -26,7 +26,9 @@ class MainActivity : AppCompatActivity() {
             val parts = log.split(" - ")
             LogEntry(parts[1], parts[0])
         }
-        recyclerView.adapter = LogAdapter(logEntries)
+        recyclerView.adapter = LogAdapter(logEntries) { url ->
+            showBrowserChooser(url)
+        }
     }
 
     private fun handleIncomingUrlIntent() {

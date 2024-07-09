@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 data class LogEntry(val url: String, val time: String)
 
-class LogAdapter(private val logList: List<LogEntry>) :
+class LogAdapter(private val logList: List<LogEntry>, private val onUrlClick: (String) -> Unit) :
     RecyclerView.Adapter<LogAdapter.LogViewHolder>() {
 
     class LogViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -26,6 +26,9 @@ class LogAdapter(private val logList: List<LogEntry>) :
         val logEntry = logList[position]
         holder.textViewUrl.text = logEntry.url
         holder.textViewTime.text = logEntry.time
+        holder.textViewUrl.setOnClickListener {
+            onUrlClick(logEntry.url)
+        }
     }
 
     override fun getItemCount(): Int = logList.size
