@@ -11,10 +11,28 @@ android {
         applicationId = "com.yucj.customopenwith"
         minSdk = 33
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // CI 注入正式版本（-PappVersionCode/-PappVersionName）；本機 build 用 -dev 後綴，
+        // 更新檢查把 -dev 視為比任何正式版舊。
+        versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 1
+        versionName = providers.gradleProperty("appVersionName").orNull ?: "1.0.0-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        // CI 從 repo secrets 還原 keystore 後以環境變數提供；
+        // 本機沒設這些變數時退回 debug key。更新安裝要求簽章一致，
+        // 正式發佈一律走 CI 的固定 key。
+        val keystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+        val keystorePassword = System.getenv("RELEASE_KEYSTORE_PASSWORD")
+        if (keystorePath != null && keystorePassword != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = keystorePassword
+                keyAlias = "release"
+                keyPassword = keystorePassword
+            }
+        }
     }
 
     buildTypes {
@@ -24,7 +42,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
