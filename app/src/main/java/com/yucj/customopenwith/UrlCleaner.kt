@@ -11,9 +11,11 @@ import java.net.URLDecoder
  */
 object UrlCleaner {
 
-    private val TRACKING_PARAMS = setOf(
+    // 點擊 ID 類：由來源平台附加在「任意目的地網址」上，天生跨網域，
+    // 只能用全域名單清（Firefox Query Stripping 同樣做法）
+    private val GLOBAL_TRACKING_PARAMS = setOf(
         // Meta
-        "fbclid", "igsh", "igshid", "mibextid",
+        "fbclid",
         // Google
         "gclid", "gbraid", "wbraid", "dclid", "srsltid",
         // Microsoft / Twitter / TikTok / LinkedIn / Yandex
@@ -22,6 +24,48 @@ object UrlCleaner {
         "mc_eid", "_hsenc", "_hsmi", "mkt_tok", "vero_id",
         "oly_anon_id", "oly_enc_id", "__s", "wickedid",
     )
+
+    // 平台自家分享/追蹤參數：只出現在該平台網域上才清，
+    // 避免通用參數名（si、s、t…）誤殺其他網站的正常參數。
+    // 參數名單參考 ClearURLs 規則檔對應 provider。
+    private class DomainRule(
+        val params: Set<String> = emptySet(),
+        val prefixes: List<String> = emptyList(),
+        val hostMatches: (String) -> Boolean,
+    )
+
+    private val DOMAIN_RULES = listOf(
+        DomainRule(params = setOf("igsh", "igshid"), hostMatches = { host ->
+            host.inDomain("instagram.com") || host.inDomain("threads.net") || host.inDomain("threads.com")
+        }),
+        DomainRule(params = setOf("mibextid", "rdid"), hostMatches = { host ->
+            host.inDomain("facebook.com")
+        }),
+        DomainRule(params = setOf("si", "feature", "pp"), hostMatches = { host ->
+            host.inDomain("youtube.com") || host.inDomain("youtu.be")
+        }),
+        DomainRule(params = setOf("si"), hostMatches = { host ->
+            host.inDomain("spotify.com")
+        }),
+        DomainRule(params = setOf("s", "t", "ref_src", "ref_url"), hostMatches = { host ->
+            host.inDomain("twitter.com") || host.inDomain("x.com")
+        }),
+        // 刻意不清 tag / linkCode / camp / creative 等聯盟分潤參數
+        DomainRule(
+            params = setOf("ref"),
+            prefixes = listOf("ref_", "pd_rd_", "pf_rd_"),
+            hostMatches = { host -> host.matches(AMAZON_HOST) },
+        ),
+        DomainRule(params = setOf("publish_id", "sp_atk", "xptdk"), hostMatches = { host ->
+            host.matches(SHOPEE_HOST)
+        }),
+    )
+
+    private val AMAZON_HOST = Regex("""(?:[a-z0-9-]+\.)*amazon(?:\.[a-z]{2,}){1,2}""")
+    private val SHOPEE_HOST = Regex("""(?:[a-z0-9-]+\.)*shopee(?:\.[a-z]{2,}){1,2}""")
+
+    private fun String.inDomain(domain: String): Boolean =
+        this == domain || endsWith(".$domain")
 
     // utm_* 刻意保留：部分分潤/導購連結靠它歸因
 
@@ -99,6 +143,8 @@ object UrlCleaner {
     private fun stripTrackingParams(url: String): String {
         val queryStart = url.indexOf('?')
         if (queryStart == -1) return url
+        val host = hostOf(url)
+        val domainRule = host?.let { h -> DOMAIN_RULES.firstOrNull { it.hostMatches(h) } }
         val fragmentStart = url.indexOf('#', queryStart)
         val base = url.substring(0, queryStart)
         val query = if (fragmentStart == -1) url.substring(queryStart + 1)
@@ -107,7 +153,10 @@ object UrlCleaner {
 
         val kept = query.split('&').filter { pair ->
             val name = pair.substringBefore('=').lowercase()
-            name.isNotEmpty() && name !in TRACKING_PARAMS
+            name.isNotEmpty() &&
+                name !in GLOBAL_TRACKING_PARAMS &&
+                (domainRule == null ||
+                    (name !in domainRule.params && domainRule.prefixes.none { name.startsWith(it) }))
         }
         return if (kept.isEmpty()) base + fragment
         else base + "?" + kept.joinToString("&") + fragment

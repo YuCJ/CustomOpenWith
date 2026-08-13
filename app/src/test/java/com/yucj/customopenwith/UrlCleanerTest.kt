@@ -92,6 +92,56 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun `strips youtube share si param`() {
+        assertEquals(
+            "https://youtu.be/dQw4w9WgXcQ",
+            UrlCleaner.clean("https://youtu.be/dQw4w9WgXcQ?si=AbCdEf123"),
+        )
+    }
+
+    @Test
+    fun `si param outside its domains is kept`() {
+        assertEquals(
+            "https://example.com/page?si=keep-me",
+            UrlCleaner.clean("https://example.com/page?si=keep-me"),
+        )
+    }
+
+    @Test
+    fun `strips x share params`() {
+        assertEquals(
+            "https://x.com/user/status/123",
+            UrlCleaner.clean("https://x.com/user/status/123?s=20&t=AbC-dEf"),
+        )
+    }
+
+    @Test
+    fun `strips instagram igsh on its own domain`() {
+        assertEquals(
+            "https://www.instagram.com/p/abc123/",
+            UrlCleaner.clean("https://www.instagram.com/p/abc123/?igsh=MzRlODBiNWFlZA=="),
+        )
+    }
+
+    @Test
+    fun `strips amazon noise but keeps affiliate tag`() {
+        assertEquals(
+            "https://www.amazon.co.jp/dp/B01N5IB20Q?tag=mysite-22&th=1",
+            UrlCleaner.clean(
+                "https://www.amazon.co.jp/dp/B01N5IB20Q?pd_rd_w=abc&pf_rd_p=def&ref_=cm_sw_r&tag=mysite-22&th=1",
+            ),
+        )
+    }
+
+    @Test
+    fun `strips shopee share params`() {
+        assertEquals(
+            "https://shopee.tw/product/123/456",
+            UrlCleaner.clean("https://shopee.tw/product/123/456?publish_id=abc&sp_atk=def&xptdk=ghi"),
+        )
+    }
+
+    @Test
     fun `leaves clean url untouched`() {
         assertEquals(
             "https://example.com/a?b=c&d=e",
