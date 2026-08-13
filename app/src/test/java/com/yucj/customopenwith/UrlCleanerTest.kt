@@ -40,6 +40,14 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun `unwraps threads link shim`() {
+        assertEquals(
+            "https://example.com/post",
+            UrlCleaner.clean("https://l.threads.net/?u=https%3A%2F%2Fexample.com%2Fpost&e=AT2abc"),
+        )
+    }
+
+    @Test
     fun `unwraps google search redirect`() {
         assertEquals(
             "https://example.com/page",

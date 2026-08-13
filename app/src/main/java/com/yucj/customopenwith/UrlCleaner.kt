@@ -36,7 +36,10 @@ object UrlCleaner {
     private val REDIRECTORS = listOf(
         // Meta link shim: l.facebook.com/l.php?u=...
         Redirector(params = listOf("u"), hostMatches = { host ->
-            host in setOf("l.facebook.com", "lm.facebook.com", "l.messenger.com", "l.instagram.com")
+            host in setOf(
+                "l.facebook.com", "lm.facebook.com", "l.messenger.com", "l.instagram.com",
+                "l.threads.net", "l.threads.com",
+            )
         }),
         // Google 搜尋結果 / Gmail: www.google.com/url?q=... 或 url=...
         Redirector(params = listOf("q", "url"), pathPrefix = "/url", hostMatches = { host ->
