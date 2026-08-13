@@ -14,10 +14,10 @@ class UrlCleanerTest {
     }
 
     @Test
-    fun `strips utm params but keeps real params`() {
+    fun `keeps utm params for affiliate attribution`() {
         assertEquals(
-            "https://example.com/watch?v=abc123",
-            UrlCleaner.clean("https://example.com/watch?utm_source=fb&v=abc123&utm_medium=social"),
+            "https://example.com/watch?utm_source=fb&v=abc123&utm_medium=social",
+            UrlCleaner.clean("https://example.com/watch?utm_source=fb&v=abc123&utm_medium=social&fbclid=IwAR1"),
         )
     }
 

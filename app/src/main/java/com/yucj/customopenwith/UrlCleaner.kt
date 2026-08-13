@@ -23,8 +23,7 @@ object UrlCleaner {
         "oly_anon_id", "oly_enc_id", "__s", "wickedid",
     )
 
-    private val TRACKING_PREFIXES = listOf("utm_")
-
+    // utm_* 刻意保留：部分分潤/導購連結靠它歸因
     private val LINK_SHIM_HOSTS = setOf(
         "l.facebook.com", "lm.facebook.com", "l.messenger.com", "l.instagram.com",
     )
@@ -77,9 +76,7 @@ object UrlCleaner {
 
         val kept = query.split('&').filter { pair ->
             val name = pair.substringBefore('=').lowercase()
-            name.isNotEmpty() &&
-                name !in TRACKING_PARAMS &&
-                TRACKING_PREFIXES.none { name.startsWith(it) }
+            name.isNotEmpty() && name !in TRACKING_PARAMS
         }
         return if (kept.isEmpty()) base + fragment
         else base + "?" + kept.joinToString("&") + fragment
