@@ -15,10 +15,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         handleIncomingUrlIntent()
-        displayLogs()
         findViewById<android.widget.Button>(R.id.button_check_update).setOnClickListener {
             checkForUpdate()
         }
+    }
+
+    // 列表在 onResume 重讀：從瀏覽器返回或回到舊 instance 時才會反映最新歷史
+    override fun onResume() {
+        super.onResume()
+        displayLogs()
+    }
+
+    // 預設 launchMode 下通常不會走到這；但呼叫端帶 FLAG_ACTIVITY_SINGLE_TOP
+    // 重用頂端 instance 時，沒有 override 就會漏掉連結
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncomingUrlIntent()
     }
 
     private fun checkForUpdate() {
