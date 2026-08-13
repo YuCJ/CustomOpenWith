@@ -142,6 +142,16 @@ class UrlCleanerTest {
     }
 
     @Test
+    fun `unwrapped redirect target also gets domain rules applied`() {
+        assertEquals(
+            "https://youtu.be/dQw4w9WgXcQ",
+            UrlCleaner.clean(
+                "https://l.threads.net/?u=https%3A%2F%2Fyoutu.be%2FdQw4w9WgXcQ%3Fsi%3DAbCdEf123%26fbclid%3DIwAR1&e=AT2abc",
+            ),
+        )
+    }
+
+    @Test
     fun `leaves clean url untouched`() {
         assertEquals(
             "https://example.com/a?b=c&d=e",
