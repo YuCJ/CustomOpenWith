@@ -8,7 +8,11 @@ import androidx.recyclerview.widget.RecyclerView
 
 data class LogEntry(val url: String, val time: String)
 
-class LogAdapter(private val logList: List<LogEntry>, private val onUrlClick: (String) -> Unit) :
+class LogAdapter(
+    private val logList: List<LogEntry>,
+    private val onUrlClick: (String) -> Unit,
+    private val onUrlLongClick: (String) -> Unit,
+) :
     RecyclerView.Adapter<LogAdapter.LogViewHolder>() {
 
     class LogViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -28,6 +32,14 @@ class LogAdapter(private val logList: List<LogEntry>, private val onUrlClick: (S
         holder.textViewTime.text = logEntry.time
         holder.textViewUrl.setOnClickListener {
             onUrlClick(logEntry.url)
+        }
+        holder.itemView.setOnLongClickListener {
+            onUrlLongClick(logEntry.url)
+            true
+        }
+        holder.textViewUrl.setOnLongClickListener {
+            onUrlLongClick(logEntry.url)
+            true
         }
     }
 

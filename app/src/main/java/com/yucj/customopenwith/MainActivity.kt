@@ -93,23 +93,35 @@ class MainActivity : AppCompatActivity() {
             val parts = log.split(" - ")
             LogEntry(parts[1], parts[0])
         }
-        recyclerView.adapter = LogAdapter(logEntries) { url ->
-            showBrowserChooser(url)
+        recyclerView.adapter = LogAdapter(
+            logEntries,
+            onUrlClick = { url -> showBrowserChooser(url) },
+            onUrlLongClick = { url -> copyToClipboard(url) },
+        )
+    }
+
+    private fun copyToClipboard(url: String) {
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("URL", url))
+        // Android 13+ shows its own clipboard confirmation overlay
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+            android.widget.Toast.makeText(this, "Copied", android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun handleIncomingUrlIntent() {
         when (intent.action) {
             Intent.ACTION_VIEW -> {
-                val url = intent.dataString ?: return
+                val url = UrlCleaner.clean(intent.dataString ?: return)
                 showBrowserChooser(url)
                 LogUtils.logUrl(this, url)
             }
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
                 if (sharedText.startsWith("http://") || sharedText.startsWith("https://")) {
-                    showBrowserChooser(sharedText)
-                    LogUtils.logUrl(this, sharedText)
+                    val url = UrlCleaner.clean(sharedText)
+                    showBrowserChooser(url)
+                    LogUtils.logUrl(this, url)
                 } else {
                     // Handle cases where shared text is not a URL (optional)
                 }
