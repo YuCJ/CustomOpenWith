@@ -89,9 +89,12 @@ class MainActivity : AppCompatActivity() {
         val recyclerView: RecyclerView = findViewById(R.id.recycler_view_logs)
         recyclerView.layoutManager = LinearLayoutManager(this)
         val logs = LogUtils.getUrlLogs(this)
-        val logEntries = logs.map { log ->
-            val parts = log.split(" - ")
-            LogEntry(parts[1], parts[0])
+        // 用 substringBefore/After 而不是 split：URL 本身可能含 " - "，
+        // 且格式不符的行直接略過而不是 crash。
+        val logEntries = logs.mapNotNull { log ->
+            val time = log.substringBefore(" - ", "")
+            val url = log.substringAfter(" - ", "")
+            if (time.isEmpty() || url.isEmpty()) null else LogEntry(url, time)
         }
         recyclerView.adapter = LogAdapter(
             logEntries,
@@ -118,12 +121,18 @@ class MainActivity : AppCompatActivity() {
             }
             Intent.ACTION_SEND -> {
                 val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return
-                if (sharedText.startsWith("http://") || sharedText.startsWith("https://")) {
-                    val url = UrlCleaner.clean(sharedText)
+                // 很多 app 分享時是「標題 + 連結」，從整段文字抽第一個連結
+                val found = Regex("""https?://\S+""").find(sharedText)?.value
+                if (found != null) {
+                    val url = UrlCleaner.clean(found)
                     showBrowserChooser(url)
                     LogUtils.logUrl(this, url)
                 } else {
-                    // Handle cases where shared text is not a URL (optional)
+                    android.widget.Toast.makeText(
+                        this,
+                        "No link found in shared text",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
                 }
             }
         }
@@ -133,24 +142,32 @@ class MainActivity : AppCompatActivity() {
     private fun showBrowserChooser(url: String) {
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         val activities = packageManager.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+        val usage = getSharedPreferences(PREFS_BROWSER_USAGE, MODE_PRIVATE)
 
-        val browserOptions = mutableListOf<CharSequence>()
-        val browserIntents = mutableListOf<Intent>()
+        data class Browser(val label: CharSequence, val packageName: String, val intent: Intent)
 
-        for (activity in activities) {
-            if (activity.activityInfo.packageName != packageName) {
-                val browserIntent = Intent(intent)
-                browserIntent.setPackage(activity.activityInfo.packageName)
-                browserOptions.add(activity.loadLabel(packageManager))
-                browserIntents.add(browserIntent)
+        // 依歷史選用次數排序，常用的排前面（次數相同維持系統原順序）
+        val browsers = activities
+            .filter { it.activityInfo.packageName != packageName }
+            .map {
+                val pkg = it.activityInfo.packageName
+                Browser(it.loadLabel(packageManager), pkg, Intent(intent).setPackage(pkg))
             }
-        }
+            .sortedByDescending { usage.getInt(it.packageName, 0) }
 
         AlertDialog.Builder(this)
             .setTitle("Choose a browser")
-            .setItems(browserOptions.toTypedArray()) { _, which ->
-                startActivity(browserIntents[which])
+            .setItems(browsers.map { it.label }.toTypedArray()) { _, which ->
+                val chosen = browsers[which]
+                usage.edit()
+                    .putInt(chosen.packageName, usage.getInt(chosen.packageName, 0) + 1)
+                    .apply()
+                startActivity(chosen.intent)
             }
             .show()
+    }
+
+    companion object {
+        private const val PREFS_BROWSER_USAGE = "browser_usage"
     }
 }
