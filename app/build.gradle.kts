@@ -1,16 +1,15 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.jetbrains.kotlin.android)
 }
 
 android {
     namespace = "com.yucj.customopenwith"
-    compileSdk = 34
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.yucj.customopenwith"
         minSdk = 33
-        targetSdk = 34
+        targetSdk = 36
         // CI 注入正式版本（-PappVersionCode/-PappVersionName）；本機 build 用 -dev 後綴，
         // 更新檢查把 -dev 視為比任何正式版舊。
         versionCode = providers.gradleProperty("appVersionCode").orNull?.toInt() ?: 1
@@ -51,12 +50,10 @@ android {
         buildConfig = true
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
+    // Kotlin 由 AGP 9 內建支援編譯，jvmTarget 預設跟隨 targetCompatibility。
 }
 
 dependencies {
